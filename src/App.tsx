@@ -2,53 +2,48 @@ import { useState } from 'react'
 import './App.css'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import SecondPage from "./SecondPage";
-import type { JournalEntry } from './types';
+import { LandingPage } from './pages/LandingPage';
+import { FeatureSelection } from './pages/FeatureSelection';
+import { NewJournalEntry } from './pages/NewJournalEntry';
+import { MoodWrap } from './pages/MoodWrap';
+import { EmotionBubble } from './pages/EmotionBubble';
+import { EmotionEntriesView } from './pages/EmotionEntriesView';
+import type { JournalEntry, Mood } from './types';
+import { MoodSelector } from './components/MoodSelector';
 import { VoiceInput } from './components/VoiceInput';
 import { SpatialGallery } from './components/SpatialGallery';
 import { JournalEntryCard } from './components/JournalEntryCard';
 import { JournalEntryScene } from './pages/JournalEntryScene';
-import { detectMood } from './services/moodDetection';
+import { AIAssistant } from './components/AIAssistant';
 
 function JournalApp() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [currentMood, setCurrentMood] = useState<Mood | null>(null);
   const [currentText, setCurrentText] = useState('');
   const [view, setView] = useState<'create' | 'list' | 'spatial'>('create');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const handleSaveEntry = async () => {
-    if (!currentText.trim()) {
-      alert('Please add some content to save');
+  const handleSaveEntry = () => {
+    if (!currentMood || !currentText.trim()) {
+      alert('Please select a mood and add some content');
       return;
     }
 
-    // Show analyzing state
-    setIsAnalyzing(true);
+    const newEntry: JournalEntry = {
+      id: Date.now().toString(),
+      content: currentText,
+      mood: currentMood,
+      timestamp: new Date(),
+      position: {
+        x: (Math.random() - 0.5) * 5,
+        y: (Math.random() - 0.5) * 5,
+        z: (Math.random() - 0.5) * 2,
+      }
+    };
 
-    try {
-      // Detect mood when saving
-      const result = await detectMood(currentText);
-
-      const newEntry: JournalEntry = {
-        id: Date.now().toString(),
-        content: currentText,
-        mood: result.mood,
-        timestamp: new Date(),
-        position: {
-          x: (Math.random() - 0.5) * 5,
-          y: (Math.random() - 0.5) * 5,
-          z: (Math.random() - 0.5) * 2,
-        }
-      };
-
-      setEntries([newEntry, ...entries]);
-      setCurrentText('');
-      setIsAnalyzing(false);
-      setView('list');
-    } catch (error) {
-      console.error('Failed to analyze mood:', error);
-      alert('Failed to analyze mood. Please try again.');
-      setIsAnalyzing(false);
-    }
+    setEntries([newEntry, ...entries]);
+    setCurrentText('');
+    setCurrentMood(null);
+    setView('list');
   };
 
   return (
@@ -80,24 +75,46 @@ function JournalApp() {
       <main className="app-main">
         {view === 'create' && (
           <div className="create-view">
+            <MoodSelector
+              selectedMood={currentMood}
+              onSelectMood={setCurrentMood}
+            />
+
             <div className="input-section">
               <VoiceInput onTranscript={setCurrentText} />
 
               <div className="text-input-container">
                 <textarea
                   className="journal-textarea"
-                  placeholder="Write your thoughts here... (AI will analyze your mood when you save)"
+                  placeholder="Or type your thoughts here..."
                   value={currentText}
                   onChange={(e) => setCurrentText(e.target.value)}
+                  style={{
+                    borderColor: currentMood?.color || 'rgba(255, 255, 255, 0.2)',
+                    boxShadow: currentMood ? `0 0 20px ${currentMood.color}40` : 'none'
+                  }}
                 />
               </div>
+
+              <AIAssistant
+                mood={currentMood}
+                entryText={currentText}
+                onSuggestionSelect={(suggestion) => {
+                  setCurrentText(prev => prev ? `${prev}\n\n${suggestion}` : suggestion);
+                }}
+              />
 
               <button
                 className="save-button"
                 onClick={handleSaveEntry}
-                disabled={!currentText.trim() || isAnalyzing}
+                disabled={!currentMood || !currentText.trim()}
+                style={{
+                  background: currentMood
+                    ? `linear-gradient(135deg, ${currentMood.color} 0%, ${currentMood.color}dd 100%)`
+                    : 'rgba(255, 255, 255, 0.1)'
+                }}
               >
-                {isAnalyzing ? 'Analyzing mood...' : 'Save Entry'}
+                Save Entry
               </button>
             </div>
           </div>
@@ -134,9 +151,15 @@ function App() {
   return (
     <Router basename={__XR_ENV_BASE__}>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/features" element={<FeatureSelection />} />
+        <Route path="/journal" element={<NewJournalEntry />} />
+        <Route path="/journal-old" element={<JournalApp />} />
+        <Route path="/mood-wrap" element={<MoodWrap />} />
+        <Route path="/emotion-bubble" element={<EmotionBubble />} />
+        <Route path="/emotion-entries/:moodId" element={<EmotionEntriesView />} />
         <Route path="/second-page" element={<SecondPage />} />
         <Route path="/entry" element={<JournalEntryScene />} />
-        <Route path="/" element={<JournalApp />} />
       </Routes>
     </Router>
   )

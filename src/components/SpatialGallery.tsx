@@ -7,7 +7,7 @@ interface SpatialGalleryProps {
 }
 
 export function SpatialGallery({ entries }: SpatialGalleryProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [rotation, setRotation] = useState(0);
   const [isRotating, setIsRotating] = useState(false);
 
   if (entries.length === 0) {
@@ -28,20 +28,13 @@ export function SpatialGallery({ entries }: SpatialGalleryProps) {
     if (isRotating) return;
 
     setIsRotating(true);
+    const angle = 360 / entries.length;
+    setRotation(prev => prev + (direction === 'left' ? angle : -angle));
 
-    if (direction === 'right') {
-      setCurrentIndex(prev => (prev + 1) % entries.length);
-    } else {
-      setCurrentIndex(prev => (prev - 1 + entries.length) % entries.length);
-    }
-
-    setTimeout(() => setIsRotating(false), 800);
+    setTimeout(() => setIsRotating(false), 600);
   };
 
-  const radius = 500;
-  const totalEntries = entries.length;
-  const anglePerCard = 360 / totalEntries;
-  const rotation = -currentIndex * anglePerCard;
+  const radius = 500; // Fixed larger radius for better wheel effect
 
   return (
     <div className="spatial-gallery">
@@ -52,11 +45,12 @@ export function SpatialGallery({ entries }: SpatialGalleryProps) {
       <div
         className="carousel-wheel"
         style={{
-          transform: `translate(-50%, -50%) translateZ(-200px) rotateY(${rotation}deg)`,
+          transform: `translateZ(-200px) rotateY(${rotation}deg)`,
           willChange: 'transform'
         }}
       >
         {entries.map((entry, index) => {
+          const totalEntries = entries.length;
           const angle = (index / totalEntries) * 360;
 
           return (
@@ -73,18 +67,17 @@ export function SpatialGallery({ entries }: SpatialGalleryProps) {
               <div className="panel-glow" />
               <div className="panel-content">
                 <div className="panel-mood">
+                  <span className="panel-emoji">{entry.mood.emoji}</span>
                   <span className="panel-mood-name">{entry.mood.name}</span>
                 </div>
                 <div className="panel-text">
-                  {entry.content.substring(0, 120)}
-                  {entry.content.length > 120 ? '...' : ''}
+                  {entry.content.substring(0, 100)}
+                  {entry.content.length > 100 ? '...' : ''}
                 </div>
                 <div className="panel-date">
                   {new Date(entry.timestamp).toLocaleDateString('en-US', {
                     month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    day: 'numeric'
                   })}
                 </div>
               </div>
@@ -104,7 +97,7 @@ export function SpatialGallery({ entries }: SpatialGalleryProps) {
           <span className="arrow">←</span>
         </button>
         <div className="carousel-counter">
-          {currentIndex + 1} / {entries.length}
+          {entries.length} memories
         </div>
         <button
           className="carousel-btn carousel-btn-right"

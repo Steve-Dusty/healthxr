@@ -19,7 +19,6 @@ export function JournalEntryCard({ entry, onClick }: JournalEntryCardProps) {
     if (onClick) {
       onClick();
     } else {
-      // Open entry in a new spatial window
       const entryData = encodeURIComponent(JSON.stringify(entry));
       const url = `${__XR_ENV_BASE__}/entry?entry=${entryData}`;
       window.open(url, `entry-${entry.id}`);
@@ -38,10 +37,15 @@ export function JournalEntryCard({ entry, onClick }: JournalEntryCardProps) {
     >
       <div className="entry-header">
         <span className="entry-mood" style={{ color: entry.mood.color }}>
-          {entry.mood.name}
+          {entry.mood.emoji} {entry.mood.name}
         </span>
         <span className="entry-date">{formattedDate}</span>
       </div>
+      {entry.title && (
+        <div className="entry-title">
+          {entry.title}
+        </div>
+      )}
       <div className="entry-content">
         {entry.content}
       </div>
