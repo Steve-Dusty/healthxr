@@ -12,7 +12,9 @@ export default defineConfig({
   plugins: [
     react(),
     // basicSsl(),
-    webSpatial(),
+    webSpatial({
+      outputDir: "",
+    }),
     createHtmlPlugin({
       inject: {
         data: {
