@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { MOODS, type JournalEntry } from '../types';
 import { BackButton } from '../components/BackButton';
+import {
+  Reality,
+  SceneGraph,
+  ModelEntity,
+  ModelAsset,
+  UnlitMaterial,
+  Entity,
+} from '@webspatial/react-sdk';
 import './EmotionBubble.css';
 
 interface Bubble {
@@ -101,36 +109,89 @@ export function EmotionBubble() {
     window.open(url.href, `emotionScene-${moodId}`);
   };
 
-  return (
-    <div
-      className="emotion-bubble-page"
-    >
-      <BackButton />
-      
-      <div className="bubbles-container">
-        <div className="bubbles-grid">
-          {bubbles.map((bubble, index) => {
-            const fillPercentage = moodPercentages[bubble.moodId] || 0;
+  // 3D sphere positions in a 2x4 grid layout
+  const getSpherePosition = (index: number) => {
+    const col = index % 4;
+    const row = Math.floor(index / 4);
+    const spacing = 0.15; // Spacing between spheres in meters
+    const startX = -0.225; // Center the grid horizontally
+    const startY = 0.05;   // Start slightly above center
+    return {
+      x: startX + col * spacing,
+      y: startY - row * spacing,
+      z: 0.3  // Bring closer to camera
+    };
+  };
 
-            return (
-              <div
-                key={index}
-                className="emotion-bubble glass-jar"
-                style={{
-                  '--bubble-color': bubble.color,
-                  '--fill-percentage': `${fillPercentage}%`,
-                } as React.CSSProperties}
-                onClick={() => handleBubbleClick(bubble)}
-              >
-                <div className="jar-fill" style={{ height: `${fillPercentage}%` }}></div>
-                <div className="jar-content">
-                  <span className="bubble-emotion">{bubble.emotion}</span>
-                  <span className="bubble-percentage">{fillPercentage.toFixed(0)}%</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+  return (
+    <div className="emotion-bubble-page">
+      <BackButton />
+
+      {/* 3D Reality Scene with Emotion Spheres */}
+      <div className="reality-container">
+        <Reality
+          style={{
+            width: '100%',
+            height: '500px',
+            '--xr-depth': 200
+          } as React.CSSProperties}
+        >
+          {/* Define materials for each emotion */}
+          {bubbles.map((bubble) => (
+            <UnlitMaterial
+              key={`mat-${bubble.moodId}`}
+              id={bubble.moodId}
+              color={bubble.color}
+              transparent
+              opacity={0.85}
+            />
+          ))}
+
+          {/* Load sphere model - using a GLB sphere */}
+          <ModelAsset
+            id="sphere"
+            src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Sphere/glTF-Binary/Sphere.glb"
+          />
+
+          {/* Scene content with 3D spheres */}
+          <SceneGraph>
+            {bubbles.map((bubble, index) => {
+              const fillPercentage = moodPercentages[bubble.moodId] || 0;
+              const position = getSpherePosition(index);
+              // Scale based on fill percentage - make them bigger!
+              const scaleValue = 0.05 + (fillPercentage / 100) * 0.05;
+
+              return (
+                <Entity key={bubble.moodId} position={position}>
+                  {/* 3D Model sphere */}
+                  <ModelEntity
+                    model="sphere"
+                    scale={{ x: scaleValue, y: scaleValue, z: scaleValue }}
+                    onSpatialTap={() => handleBubbleClick(bubble)}
+                  />
+                </Entity>
+              );
+            })}
+          </SceneGraph>
+        </Reality>
+      </div>
+
+      {/* Labels below the 3D scene */}
+      <div className="bubbles-labels">
+        {bubbles.map((bubble, index) => {
+          const fillPercentage = moodPercentages[bubble.moodId] || 0;
+          return (
+            <div
+              key={index}
+              className="bubble-label"
+              onClick={() => handleBubbleClick(bubble)}
+              style={{ '--bubble-color': bubble.color } as React.CSSProperties}
+            >
+              <span className="bubble-emotion">{bubble.emotion}</span>
+              <span className="bubble-percentage">{fillPercentage.toFixed(0)}%</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
