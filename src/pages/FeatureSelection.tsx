@@ -28,19 +28,28 @@ export function FeatureSelection() {
         <div className="feature-buttons">
           <button className="feature-button journal-button" onClick={handleJournal}>
             <div className="button-icon">📔</div>
-            <span className="button-label">Journal</span>
+            <div className="button-text">
+              <span className="button-label">Journal</span>
+              <span className="button-description">Document your thoughts</span>
+            </div>
             <span className="button-glow"></span>
           </button>
-          
+
           <button className="feature-button mood-wrap-button" onClick={handleMoodWrap}>
             <div className="button-icon">🔮</div>
-            <span className="button-label">Soul Summary</span>
+            <div className="button-text">
+              <span className="button-label">Soul Summary</span>
+              <span className="button-description">Reflect on your journey</span>
+            </div>
             <span className="button-glow"></span>
           </button>
-          
+
           <button className="feature-button emotion-bubble-button" onClick={handleEmotionBubble}>
             <div className="button-icon">💭</div>
-            <span className="button-label">Emotion Sphere</span>
+            <div className="button-text">
+              <span className="button-label">Emotion Sphere</span>
+              <span className="button-description">Explore your feelings</span>
+            </div>
             <span className="button-glow"></span>
           </button>
         </div>
